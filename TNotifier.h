@@ -73,7 +73,7 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 			{
 				bool res{ false };
 				
-				for(size_t i = 0; i < STOCK_COUNT; ++i)
+				for(size_t i = 0; i < STOCK_COUNT; ++i) // spin-lock cycle
 				{
 					if (notifyQueue.Enqueue(Top{ basePrice, price, m_pStocks[stock_id].delta.load(std::memory_order_relaxed), stock_id }))
 					{
@@ -112,25 +112,30 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 				Top top{};
 				bool res{ false };
 				
-				while (notifyQueue.Dequeue(top))
+				for(size_t i = 0; i < STOCK_COUNT; ++i) // spin-lock cycle 
 				{
-					if (top.delta)
+					while (notifyQueue.Dequeue(top)) // try get all items
 					{
-						auto rangе = m_Top.equal_range(top.delta);
-						auto itTop = std::find_if(rangе.first, rangе.second,
-							[&](auto& item) { return item.second.index == top.index; });
+						if (top.delta)
+						{
+							auto rangе = m_Top.equal_range(top.delta);
+							auto itTop = std::find_if(rangе.first, rangе.second,
+								[&](auto& item) { return item.second.index == top.index; });
 
-						if (itTop != m_Top.end())
-							m_Top.erase(itTop);
-					}
-					double newDelta = (top.lastPrice - top.basePrice < 0) ?
-						((100 - (top.lastPrice * 100 / top.basePrice)) * -1.0)
-						: ((top.lastPrice * 100) / top.basePrice - 100);
+							if (itTop != m_Top.end())
+								m_Top.erase(itTop);
+						}
+						double newDelta = (top.lastPrice - top.basePrice < 0) ?
+							((100 - (top.lastPrice * 100 / top.basePrice)) * -1.0)
+							: ((top.lastPrice * 100) / top.basePrice - 100);
 
-					m_Top.emplace(newDelta, Top{
-						top.basePrice, top.lastPrice, newDelta, top.index });
-					res = true;
-                                  }
+						m_Top.emplace(newDelta, Top{
+							top.basePrice, top.lastPrice, newDelta, top.index });
+						res = true;
+                                  	}
+					if(res)
+					    break;
+				  }
 				  
 				  if(res)
 				  {
