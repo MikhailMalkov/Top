@@ -85,7 +85,7 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 				if (res)
 				{
 					m_pStocks[stock_id].delta.store((price - basePrice < 0)? 
-						((price * 100/ basePrice) * -1.0) 
+						((100 - (price * 100/ basePrice)) * -1.0) 
 						: ((price * 100)/ basePrice - 100),
 						std::memory_order_relaxed);
 					m_itemReady = true;
@@ -124,7 +124,7 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 							m_Top.erase(itTop);
 					}
 					double newDelta = (top.lastPrice - top.basePrice < 0) ?
-						((top.lastPrice * 100 / top.basePrice) * -1.0)
+						((100 - (top.lastPrice * 100 / top.basePrice)) * -1.0)
 						: ((top.lastPrice * 100) / top.basePrice - 100);
 
 					m_Top.emplace(newDelta, Top{
