@@ -122,7 +122,12 @@ public:
 
         return false;
     }
-
+    
+    bool isEmpty()
+    {
+        return !(m_enqPos - m_deqPos);
+    }
+    
     TNonBlockQueue(TNonBlockQueue const&) = delete;
     void operator = (TNonBlockQueue const&) = delete;
 
