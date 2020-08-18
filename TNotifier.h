@@ -129,7 +129,7 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 
 					m_Top.emplace(newDelta, Top{
 						top.basePrice, top.lastPrice, newDelta, top.index });
-
+                                        std::unique_lock<std::mutex> lock(m_notifyMutex);
 					m_notifyReady = true;
 					
 				}
