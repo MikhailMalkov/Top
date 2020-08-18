@@ -88,7 +88,7 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 						((100 - (price * 100/ basePrice)) * -1.0) 
 						: ((price * 100)/ basePrice - 100),
 						std::memory_order_relaxed);
-					m_itemReady = true;
+					
 					cvItemReady.notify_all();
 				}
 			}
@@ -103,8 +103,8 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 			{
 				std::unique_lock<std::mutex> lock(m_itemReadyMutex);
 				
-				while(!m_itemReady && !m_isStop)
-					cvItemReady.wait(lock, [&] {return m_itemReady || m_isStop; });
+				while(notifyQueue.isEmpty() && !m_isStop)
+					cvItemReady.wait(lock, [&] {return !notifyQueue.isEmpty() || m_isStop; });
 
 				if (m_isStop)
 					return;
@@ -144,7 +144,6 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 					cvNotify.notify_all();
 				  }
 				
-				  m_itemReady = false;
 			}
 		}
 
@@ -213,7 +212,7 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 		std::condition_variable cvNotify;
 		std::condition_variable cvItemReady;
 		bool m_notifyReady{ false };
-		bool m_itemReady{ false };
+		
 		std::thread m_notifyThread;
 		std::thread m_countThread;
 		std::atomic<bool> m_isStop{false};
