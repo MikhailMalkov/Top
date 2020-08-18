@@ -71,7 +71,7 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 				m_pStocks[stock_id].basePrice.store(price, std::memory_order_relaxed);
 			else
 			{
-				bool res = false;
+				bool res{ false };
 				
 				for(size_t i = 0; i < STOCK_COUNT; ++i)
 				{
@@ -129,14 +129,17 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 
 					m_Top.emplace(newDelta, Top{
 						top.basePrice, top.lastPrice, newDelta, top.index });
-                                        std::unique_lock<std::mutex> lock(m_notifyMutex);
+					res = true;
+                                  }
+				  
+				  if(res)
+				  {
+					std::unique_lock<std::mutex> lock(m_notifyMutex);
 					m_notifyReady = true;
-					
-				}
+					cvNotify.notify_all();
+				  }
 				
-				cvNotify.notify_all();
-				
-				m_itemReady = false;
+				  m_itemReady = false;
 			}
 		}
 
@@ -149,7 +152,7 @@ template<size_t STOCK_COUNT, size_t TOP_COUNT, size_t NOTIFY_TIMEOUT> class TNot
 				while(!m_notifyReady && !m_isStop)
 					cvNotify.wait(lock, [&] {return m_notifyReady || m_isStop; });
 			    
-                if (m_isStop)
+                		if (m_isStop)
 					return;
 				
 				std::vector<Top> topLoosers;
