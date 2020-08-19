@@ -125,7 +125,7 @@ public:
     
     bool isEmpty()
     {
-        return !(m_enqPos - m_deqPos);
+        return m_enqPos == m_deqPos;
     }
     
     TNonBlockQueue(TNonBlockQueue const&) = delete;
